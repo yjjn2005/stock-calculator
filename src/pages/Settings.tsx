@@ -1,8 +1,11 @@
+import React, { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { FileImporter } from '@/components/FileImporter';
 
 export function Settings() {
   const { currency, exchangeRate, setCurrency, setExchangeRate } = useAppStore();
-  const [rate, setRate] = React.useState(exchangeRate.toString());
+  const [rate, setRate] = useState(exchangeRate.toString());
+  const [showFileImporter, setShowFileImporter] = useState(false);
 
   const handleSaveRate = () => {
     const numRate = parseFloat(rate) || 0;
@@ -76,18 +79,34 @@ export function Settings() {
               <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 border border-gray-300 rounded-lg transition">
                 📥 데이터 내보내기
               </button>
-              <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 border border-gray-300 rounded-lg transition">
+              <button
+                onClick={() => setShowFileImporter(!showFileImporter)}
+                className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 border border-gray-300 rounded-lg transition"
+              >
                 📤 데이터 불러오기
               </button>
               <button className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 border border-red-300 rounded-lg transition">
                 🗑️ 모든 데이터 삭제
               </button>
             </div>
+
+            {showFileImporter && (
+              <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-md font-semibold text-gray-900">Excel 파일 가져오기</h3>
+                  <button
+                    onClick={() => setShowFileImporter(false)}
+                    className="text-gray-500 hover:text-gray-700 text-lg"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <FileImporter />
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-import React from 'react';
