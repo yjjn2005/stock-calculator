@@ -1,5 +1,8 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Navigation } from '@/components/Navigation';
+import { useAppStore } from '@/store/useAppStore';
+import { loadStocks, loadTransactions } from '@/services/stockStore';
 
 import { Dashboard } from '@/pages/Dashboard';
 import { BuyCalculator } from '@/pages/BuyCalculator';
@@ -9,6 +12,19 @@ import { Portfolio } from '@/pages/Portfolio';
 import { Settings } from '@/pages/Settings';
 
 function App() {
+  const { setStocks, setTransactions } = useAppStore();
+
+  useEffect(() => {
+    const initializeData = async () => {
+      const stocks = await loadStocks();
+      const transactions = await loadTransactions();
+      setStocks(stocks);
+      setTransactions(transactions);
+    };
+
+    initializeData();
+  }, [setStocks, setTransactions]);
+
   return (
     <Router basename="/stock-calculator">
       <div className="min-h-screen bg-gray-50">

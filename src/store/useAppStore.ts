@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { User } from 'firebase/auth';
 
 export interface Stock {
   id?: string;
@@ -26,14 +25,12 @@ export interface Transaction {
 }
 
 export interface AppState {
-  user: User | null;
   stocks: Stock[];
   transactions: Transaction[];
   exchangeRate: number;
   currency: 'KRW' | 'USD';
 
   // Actions
-  setUser: (user: User | null) => void;
   setStocks: (stocks: Stock[]) => void;
   addStock: (stock: Stock) => void;
   updateStock: (id: string | undefined, stock: Partial<Stock>) => void;
@@ -47,13 +44,11 @@ export interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  user: null,
   stocks: [],
   transactions: [],
   exchangeRate: 1200,
   currency: 'KRW',
 
-  setUser: (user) => set({ user }),
   setStocks: (stocks) => set({ stocks }),
   addStock: (stock) => set((state) => ({ stocks: [...state.stocks, stock] })),
   updateStock: (id, stock) => set((state) => ({
