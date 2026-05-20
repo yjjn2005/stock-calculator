@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 export function SellByAmount() {
   const navigate = useNavigate();
-  const { stocks, addTransaction, user } = useAppStore();
+  const { stocks, addTransaction } = useAppStore();
   const [selectedStock, setSelectedStock] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [currentPrice, setCurrentPrice] = useState('');
@@ -92,10 +92,8 @@ export function SellByAmount() {
         notes: `Sold ${requiredShares} shares (목표금액: ${amount}) at ${price}. Profit: ${profit.toFixed(0)}`,
       };
 
-      if (user?.uid) {
-        await saveTransaction(user.uid, transaction);
-        addTransaction(transaction);
-      }
+      await saveTransaction(transaction);
+      addTransaction(transaction);
 
       setSuccessMessage(
         `Successfully sold ${requiredShares} shares for ${actualAmount.toFixed(0)} ${selectedStockData.currency}!`

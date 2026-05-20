@@ -1,172 +1,96 @@
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  getDocs,
-  onSnapshot,
-  query,
-  serverTimestamp,
-  Timestamp,
-} from 'firebase/firestore';
-import { db } from './firebase';
+import { Stock, Transaction } from '@/store/useAppStore';
 
-export interface Stock {
-  id?: string;
-  ticker: string;
-  koreanName?: string;
-  quantity: number;
-  avgCost: number;
-  currency: 'KRW' | 'USD';
-  purchaseDate: Timestamp | Date;
-  notes?: string;
+const STOCKS_KEY = 'stocks';
+const TRANSACTIONS_KEY = 'transactions';
+
+export async function saveStock(stock: Stock): Promise<string> {
+  const stocks = getStocksFromStorage();
+  const id = stock.id || Date.now().toString();
+  const newStock = { ...stock, id };
+  stocks.push(newStock);
+  localStorage.setItem(STOCKS_KEY, JSON.stringify(stocks));
+  return id;
 }
 
-export interface Transaction {
-  id?: string;
-  type: 'BUY' | 'SELL';
-  ticker: string;
-  koreanName?: string;
-  quantity: number;
-  price: number;
-  amount: number;
-  currency: 'KRW' | 'USD';
-  date: Timestamp | Date;
-  notes?: string;
-}
-
-export async function saveStock(userId: string, stock: Stock): Promise<string> {
-  try {
-    const docRef = await addDoc(
-      collection(db, `users/${userId}/stocks`),
-      {
-        ...stock,
-        purchaseDate: stock.purchaseDate instanceof Timestamp ? stock.purchaseDate : new Date(stock.purchaseDate),
-      }
-    );
-    return docRef.id;
-  } catch (error) {
-    console.error('Failed to save stock:', error);
-    throw error;
+export async function updateStock(id: string, stock: Stock): Promise<void> {
+  const stocks = getStocksFromStorage();
+  const index = stocks.findIndex(s => s.id === id);
+  if (index !== -1) {
+    stocks[index] = { ...stock, id };
+    localStorage.setItem(STOCKS_KEY, JSON.stringify(stocks));
   }
 }
 
-export async function updateStock(userId: string, stockId: string, stock: Partial<Stock>): Promise<void> {
-  try {
-    await updateDoc(doc(db, `users/${userId}/stocks/${stockId}`), {
-      ...stock,
-      purchaseDate: stock.purchaseDate instanceof Timestamp ? stock.purchaseDate : new Date(stock.purchaseDate),
-    });
-  } catch (error) {
-    console.error('Failed to update stock:', error);
-    throw error;
-  }
+export async function deleteStock(id: string): Promise<void> {
+  const stocks = getStocksFromStorage().filter(s => s.id !== id);
+  localStorage.setItem(STOCKS_KEY, JSON.stringify(stocks));
 }
 
-export async function deleteStock(userId: string, stockId: string): Promise<void> {
-  try {
-    await deleteDoc(doc(db, `users/${userId}/stocks/${stockId}`));
-  } catch (error) {
-    console.error('Failed to delete stock:', error);
-    throw error;
-  }
+export async function loadStocks(): Promise<Stock[]> {
+  return getStocksFromStorage();
 }
 
-export async function loadStocks(userId: string): Promise<Stock[]> {
+export function watchStocks(callback: (stocks: Stock[]) => void): () => void {
+  callback(getStocksFromStorage());
+
+  const handleStorageChange = () => {
+    callback(getStocksFromStorage());
+  };
+
+  window.addEventListener('storage', handleStorageChange);
+
+  return () => {
+    window.removeEventListener('storage', handleStorageChange);
+  };
+}
+
+export async function saveTransaction(transaction: Transaction): Promise<string> {
+  const transactions = getTransactionsFromStorage();
+  const id = transaction.id || Date.now().toString();
+  const newTransaction = {
+    ...transaction,
+    id,
+    date: new Date().toISOString(),
+  };
+  transactions.unshift(newTransaction);
+  localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
+  return id;
+}
+
+export async function loadTransactions(): Promise<Transaction[]> {
+  return getTransactionsFromStorage();
+}
+
+export function watchTransactions(callback: (transactions: Transaction[]) => void): () => void {
+  callback(getTransactionsFromStorage());
+
+  const handleStorageChange = () => {
+    callback(getTransactionsFromStorage());
+  };
+
+  window.addEventListener('storage', handleStorageChange);
+
+  return () => {
+    window.removeEventListener('storage', handleStorageChange);
+  };
+}
+
+function getStocksFromStorage(): Stock[] {
   try {
-    const querySnapshot = await getDocs(
-      collection(db, `users/${userId}/stocks`)
-    );
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    } as Stock));
-  } catch (error) {
-    console.error('Failed to load stocks:', error);
+    const data = localStorage.getItem(STOCKS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    console.error('Failed to load stocks from storage');
     return [];
   }
 }
 
-export function watchStocks(
-  userId: string,
-  callback: (stocks: Stock[]) => void
-): () => void {
+function getTransactionsFromStorage(): Transaction[] {
   try {
-    const q = query(collection(db, `users/${userId}/stocks`));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const stocks = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      } as Stock));
-      callback(stocks);
-    });
-    return unsubscribe;
-  } catch (error) {
-    console.error('Failed to watch stocks:', error);
-    return () => {};
-  }
-}
-
-export async function saveTransaction(userId: string, transaction: Transaction): Promise<string> {
-  try {
-    const docRef = await addDoc(
-      collection(db, `users/${userId}/transactions`),
-      {
-        ...transaction,
-        date: transaction.date instanceof Timestamp ? transaction.date : new Date(transaction.date),
-      }
-    );
-    return docRef.id;
-  } catch (error) {
-    console.error('Failed to save transaction:', error);
-    throw error;
-  }
-}
-
-export async function loadTransactions(userId: string): Promise<Transaction[]> {
-  try {
-    const querySnapshot = await getDocs(
-      collection(db, `users/${userId}/transactions`)
-    );
-    return querySnapshot.docs
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      } as Transaction))
-      .sort((a, b) => {
-        const timeA = a.date instanceof Timestamp ? a.date.toMillis() : new Date(a.date).getTime();
-        const timeB = b.date instanceof Timestamp ? b.date.toMillis() : new Date(b.date).getTime();
-        return timeB - timeA;
-      });
-  } catch (error) {
-    console.error('Failed to load transactions:', error);
+    const data = localStorage.getItem(TRANSACTIONS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    console.error('Failed to load transactions from storage');
     return [];
-  }
-}
-
-export function watchTransactions(
-  userId: string,
-  callback: (transactions: Transaction[]) => void
-): () => void {
-  try {
-    const q = query(collection(db, `users/${userId}/transactions`));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const transactions = snapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        } as Transaction))
-        .sort((a, b) => {
-          const timeA = a.date instanceof Timestamp ? a.date.toMillis() : new Date(a.date).getTime();
-          const timeB = b.date instanceof Timestamp ? b.date.toMillis() : new Date(b.date).getTime();
-          return timeB - timeA;
-        });
-      callback(transactions);
-    });
-    return unsubscribe;
-  } catch (error) {
-    console.error('Failed to watch transactions:', error);
-    return () => {};
   }
 }

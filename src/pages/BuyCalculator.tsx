@@ -11,7 +11,7 @@ export function BuyCalculator() {
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { addStock, addTransaction, user } = useAppStore();
+  const { addStock, addTransaction } = useAppStore();
 
   const calculateQuantity = () => {
     const amount = parseFloat(investAmount) || 0;
@@ -29,11 +29,6 @@ export function BuyCalculator() {
       return;
     }
 
-    if (!user?.uid) {
-      alert('User not authenticated');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -47,7 +42,7 @@ export function BuyCalculator() {
         notes,
       };
 
-      const stockId = await saveStock(user.uid, stock);
+      const stockId = await saveStock(stock);
       addStock({ ...stock, id: stockId });
 
       const transaction = {
@@ -62,7 +57,7 @@ export function BuyCalculator() {
         notes: notes || `Bought ${quantity} shares at ${currentPrice}`,
       };
 
-      await saveTransaction(user.uid, transaction);
+      await saveTransaction(transaction);
       addTransaction(transaction);
 
       // Reset form

@@ -1,7 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useEffect } from 'react';
-import { initializeAuth } from '@/services/firebase';
-import { useAppStore } from '@/store/useAppStore';
 import { Navigation } from '@/components/Navigation';
 
 import { Dashboard } from '@/pages/Dashboard';
@@ -12,15 +9,6 @@ import { Portfolio } from '@/pages/Portfolio';
 import { Settings } from '@/pages/Settings';
 
 function App() {
-  const setUser = useAppStore(state => state.setUser);
-
-  useEffect(() => {
-    const user = initializeAuth();
-    if (user) {
-      setUser(user);
-    }
-  }, [setUser]);
-
   return (
     <Router basename="/stock-calculator">
       <div className="min-h-screen bg-gray-50">
