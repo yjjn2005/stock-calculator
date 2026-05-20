@@ -16,13 +16,21 @@ export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 
 // Initialize anonymous auth
-export async function initializeAuth() {
+export function initializeAuth() {
   try {
-    if (!auth.currentUser) {
-      await signInAnonymously(auth);
-      console.log('Anonymous auth initialized');
+    if (auth.currentUser) {
+      return auth.currentUser;
     }
+
+    signInAnonymously(auth).then(() => {
+      console.log('Anonymous auth initialized');
+    }).catch(error => {
+      console.error('Auth initialization failed:', error);
+    });
+
+    return auth.currentUser;
   } catch (error) {
     console.error('Auth initialization failed:', error);
+    return null;
   }
 }

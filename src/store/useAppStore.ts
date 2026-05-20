@@ -1,39 +1,43 @@
 import { create } from 'zustand';
+import { User } from 'firebase/auth';
 
 export interface Stock {
-  id: string;
+  id?: string;
   ticker: string;
-  koreanName: string;
+  koreanName?: string;
   quantity: number;
   avgCost: number;
   currency: 'KRW' | 'USD';
-  purchaseDate: string;
+  purchaseDate?: Date | string;
   notes?: string;
 }
 
 export interface Transaction {
-  id: string;
+  id?: string;
   type: 'BUY' | 'SELL';
   ticker: string;
+  koreanName?: string;
   quantity: number;
   price: number;
   amount: number;
   currency: 'KRW' | 'USD';
-  date: string;
+  date: Date | string;
   notes?: string;
 }
 
 export interface AppState {
+  user: User | null;
   stocks: Stock[];
   transactions: Transaction[];
   exchangeRate: number;
   currency: 'KRW' | 'USD';
 
   // Actions
+  setUser: (user: User | null) => void;
   setStocks: (stocks: Stock[]) => void;
   addStock: (stock: Stock) => void;
-  updateStock: (id: string, stock: Partial<Stock>) => void;
-  deleteStock: (id: string) => void;
+  updateStock: (id: string | undefined, stock: Partial<Stock>) => void;
+  deleteStock: (id: string | undefined) => void;
 
   setTransactions: (transactions: Transaction[]) => void;
   addTransaction: (transaction: Transaction) => void;
@@ -43,11 +47,13 @@ export interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
+  user: null,
   stocks: [],
   transactions: [],
   exchangeRate: 1200,
   currency: 'KRW',
 
+  setUser: (user) => set({ user }),
   setStocks: (stocks) => set({ stocks }),
   addStock: (stock) => set((state) => ({ stocks: [...state.stocks, stock] })),
   updateStock: (id, stock) => set((state) => ({
@@ -59,7 +65,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   setTransactions: (transactions) => set({ transactions }),
   addTransaction: (transaction) => set((state) => ({
-    transactions: [...state.transactions, transaction],
+    transactions: [transaction, ...state.transactions],
   })),
 
   setExchangeRate: (rate) => set({ exchangeRate: rate }),

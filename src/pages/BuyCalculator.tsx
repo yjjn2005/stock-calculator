@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { saveStock, saveTransaction } from '@/services/stockStore';
 
 export function BuyCalculator() {
   const [stockName, setStockName] = useState('');
@@ -8,8 +9,9 @@ export function BuyCalculator() {
   const [currentPrice, setCurrentPrice] = useState('');
   const [currency, setCurrency] = useState<'KRW' | 'USD'>('KRW');
   const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const addStock = useAppStore((state) => state.addStock);
+  const { addStock, addTransaction, user } = useAppStore();
 
   const calculateQuantity = () => {
     const amount = parseFloat(investAmount) || 0;
@@ -21,33 +23,62 @@ export function BuyCalculator() {
   const usedAmount = quantity * (parseFloat(currentPrice) || 0);
   const remainingAmount = (parseFloat(investAmount) || 0) - usedAmount;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!stockName || !ticker || !investAmount || !currentPrice) {
       alert('모든 필수 항목을 입력하세요');
       return;
     }
 
-    const stock = {
-      id: `${ticker}-${Date.now()}`,
-      ticker,
-      koreanName: stockName,
-      quantity,
-      avgCost: parseFloat(currentPrice),
-      currency,
-      purchaseDate: new Date().toISOString().split('T')[0],
-      notes,
-    };
+    if (!user?.uid) {
+      alert('User not authenticated');
+      return;
+    }
 
-    addStock(stock);
+    setIsSubmitting(true);
 
-    // Reset form
-    setStockName('');
-    setTicker('');
-    setInvestAmount('');
-    setCurrentPrice('');
-    setNotes('');
+    try {
+      const stock = {
+        ticker,
+        koreanName: stockName,
+        quantity,
+        avgCost: parseFloat(currentPrice),
+        currency,
+        purchaseDate: new Date(),
+        notes,
+      };
 
-    alert('저장되었습니다');
+      const stockId = await saveStock(user.uid, stock);
+      addStock({ ...stock, id: stockId });
+
+      const transaction = {
+        type: 'BUY' as const,
+        ticker,
+        koreanName: stockName,
+        quantity,
+        price: parseFloat(currentPrice),
+        amount: usedAmount,
+        currency,
+        date: new Date(),
+        notes: notes || `Bought ${quantity} shares at ${currentPrice}`,
+      };
+
+      await saveTransaction(user.uid, transaction);
+      addTransaction(transaction);
+
+      // Reset form
+      setStockName('');
+      setTicker('');
+      setInvestAmount('');
+      setCurrentPrice('');
+      setNotes('');
+
+      alert('저장되었습니다');
+    } catch (error) {
+      console.error('Failed to save:', error);
+      alert('저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -161,9 +192,10 @@ export function BuyCalculator() {
           {/* 저장 버튼 */}
           <button
             onClick={handleSave}
-            className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
+            disabled={isSubmitting}
+            className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            저장하기
+            {isSubmitting ? '저장 중...' : '저장하기'}
           </button>
         </div>
       </div>
