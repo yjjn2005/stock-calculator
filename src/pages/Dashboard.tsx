@@ -56,7 +56,7 @@ export function Dashboard() {
               <tbody>
                 {recentTransactions.map((tx) => (
                   <tr key={tx.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-900">{tx.date}</td>
+                    <td className="px-4 py-3 text-gray-900">{typeof tx.date === 'string' ? tx.date : new Date(tx.date).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-gray-900">{tx.ticker}</td>
                     <td className="px-4 py-3">
                       <span
