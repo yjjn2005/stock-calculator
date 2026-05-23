@@ -10,6 +10,7 @@ import { SellByShares } from '@/pages/SellByShares';
 import { SellByAmount } from '@/pages/SellByAmount';
 import { Portfolio } from '@/pages/Portfolio';
 import { Settings } from '@/pages/Settings';
+import { ETFProjection } from '@/pages/ETFProjection';
 
 function App() {
   const { setStocks, setTransactions } = useAppStore();
@@ -36,6 +37,7 @@ function App() {
             <Route path="/sell-by-shares" element={<SellByShares />} />
             <Route path="/sell-by-amount" element={<SellByAmount />} />
             <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/etf" element={<ETFProjection />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>

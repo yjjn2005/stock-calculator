@@ -11,6 +11,7 @@ export function Navigation() {
     { path: '/sell-by-shares', label: '매도-주수', icon: '📉' },
     { path: '/sell-by-amount', label: '매도-금액', icon: '💰' },
     { path: '/portfolio', label: '포트폴리오', icon: '💼' },
+    { path: '/etf', label: 'ETF 5년', icon: '🎯' },
   ];
 
   return (
